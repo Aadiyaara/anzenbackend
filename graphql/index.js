@@ -153,6 +153,7 @@ const RootQuery = new GraphQLObjectType({
             type: GraphQLNonNull(UserType),
             async resolve(parent, args, req) {
                 try {
+                    console.log(req)
                     if(!req.isAuth) {
                         return new Error('Unauthorized')
                     }
@@ -217,6 +218,12 @@ const RootQuery = new GraphQLObjectType({
                     console.log('Error loggin in the user: ', err)
                     return err
                 }
+            }
+        },
+        createSOS: {
+            type: GraphQLNonNull(SOSType),
+            args: {
+                name: {type: GraphQLString}
             }
         },
         getBlogById: {
