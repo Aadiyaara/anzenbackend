@@ -37,6 +37,10 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Pool'
     },
+    address: {
+        type: String,
+        required: true
+    },
     dateLastLogin: {
         type: String
     },

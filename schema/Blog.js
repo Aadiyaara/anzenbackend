@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const blogSchema = new Schema({
-    type: {
+    kind: {
         type: String,
         required: true
     },
