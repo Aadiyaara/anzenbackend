@@ -372,64 +372,6 @@ const RootMutation = new GraphQLObjectType({
                 }
             }
         },
-        revokeSOS: {
-            type: GraphQLNonNull(GraphQLString),
-            async resolve (parent, args, req) {
-                try {
-                    var SOSs = (await User.findById(req.userId)).SOSs
-                    for(elem in SOSs) {
-                        var mailOptions = {
-                            from: 'anzen.kulstuff@gmail.com',
-                            to: elem.assistEmail,
-                            subject: 'SOS Alert',
-                            text: 'Situation under Control'
-                        }
-                        transporter.sendMail(mailOptions, function(error, info){
-                            if (error) {
-                                throw error
-                            }
-                            else {
-                                console.log('Email sent: ' + info.response)
-                            }
-                        })
-                    }
-                    return "Success!"
-                }
-                catch (err) {
-                    console.log('Error Sending SOS Email to everyone: ', err)
-                    return err
-                }
-            }
-        },
-        alertSOS: {
-            type: GraphQLNonNull(GraphQLString),
-            async resolve (parent, args, req) {
-                try {
-                    var SOSs = (await User.findById(req.userId)).SOSs
-                    for(elem in SOSs) {
-                        var mailOptions = {
-                            from: 'anzen.kulstuff@gmail.com',
-                            to: elem.assistEmail,
-                            subject: 'SOS Alert',
-                            text: 'No Discount on La Pino\'s'
-                        }
-                        transporter.sendMail(mailOptions, function(error, info){
-                            if (error) {
-                                throw error
-                            }
-                            else {
-                                console.log('Email sent: ' + info.response)
-                            }
-                        })
-                    }
-                    return "Success!"
-                }
-                catch (err) {
-                    console.log('Error Sending SOS Email to everyone: ', err)
-                    return err
-                }
-            }
-        },
         createPool: {
             type: GraphQLNonNull(PoolType),
             args: {
@@ -591,6 +533,20 @@ const RootMutation = new GraphQLObjectType({
                     dateCreated: new Date().toDateString(),
                     status: 'Active'
                 })
+                var mailOptions = {
+                    from: 'anzen.kulstuff@gmail.com',
+                    to: elem.assistEmail,
+                    subject: 'SOS Alert',
+                    text: args.message
+                }
+                transporter.sendMail(mailOptions, function(error, info){
+                    if (error) {
+                        throw error
+                    }
+                    else {
+                        console.log('Email sent: ' + info.response)
+                    }
+                })
                 const newSOS = await newSOS.save()
                 await User.findByIdAndUpdate(req.userId, {$push: {SOSs: newSOS.id}}, {new: true})
                 await Contact.findByIdAndUpdate(contactId, {$push: {SOSs: newSOS.id}}, {new: true})
@@ -602,6 +558,20 @@ const RootMutation = new GraphQLObjectType({
                 sosId: {type: GraphQLNonNull(GraphQLString)}
             },
             async resolve (parent, args, req) {
+                var mailOptions = {
+                    from: 'anzen.kulstuff@gmail.com',
+                    to: elem.assistEmail,
+                    subject: 'SOS Alert',
+                    text: 'Situation under control'
+                }
+                transporter.sendMail(mailOptions, function(error, info){
+                    if (error) {
+                        throw error
+                    }
+                    else {
+                        console.log('Email sent: ' + info.response)
+                    }
+                })
                 return await SOS.findByIdAndUpdate(sosId, {
                     status: 'Resolved'
                 }, {
