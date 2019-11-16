@@ -3,14 +3,6 @@ const { GraphQLObjectType, GraphQLSchema, GraphQLString, GraphQLID, GraphQLList,
 const mongoose = require('mongoose')
 var nodemailer = require('nodemailer');
 
-var transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'anzen.kulstuff@gmail.com',
-    pass: 'anzenKul'
-  }
-});
-
 // Schema
 const User = require('../schema/User')
 const Pool = require('../schema/Pool')
@@ -49,6 +41,12 @@ const UserType = new GraphQLObjectType({
             type: GraphQLList(SOSType),
             resolve(parent, args) {
                 return SOS.find({user: parent.id})
+            }
+        },
+        contacts: {
+            type: GraphQLList(ContactType),
+            resolve(parent, args, req) {
+                return Contact.find({user: req.userId})
             }
         },
         status: {
@@ -90,7 +88,7 @@ const ContactType = new GraphQLObjectType({
         user: {
             type: GraphQLNonNull(UserType),
             resolve(parent,args) {
-                return User.findOne({SOSs: {$in: parent.id}})
+                return User.findOne({contacts: {$in: parent.id}})
             }
         },
         SOSs: {
@@ -527,29 +525,67 @@ const RootMutation = new GraphQLObjectType({
                 const newSOS = new SOS({
                     name: args.name,
                     kind: args.kind,
-                    messgae: args.message,
+                    message: args.message,
                     user: req.userId,
-                    contact: args.contactI,
+                    contact: args.contactId,
                     dateCreated: new Date().toDateString(),
                     status: 'Active'
                 })
-                var mailOptions = {
-                    from: 'anzen.kulstuff@gmail.com',
-                    to: elem.assistEmail,
-                    subject: 'SOS Alert',
-                    text: args.message
-                }
-                transporter.sendMail(mailOptions, function(error, info){
+                const contact = await Contact.findById(args.contactId)
+                // var transporter = nodemailer.createTransport({
+                //     service: 'gmail',
+                //     auth: {
+                //         user: 'aadiyaara@gmail.com',
+                //         pass: 'hyunghyung'
+                //     }
+                // })
+                // var mailOptions = {
+                //     from: 'anzen.kulstuff@gmail.com',
+                //     to: contact.assistEmail,
+                //     subject: 'SOS Alert',
+                //     text: args.message
+                // }
+                // try {
+                //     transporter.sendMail(mailOptions, function(error, info){
+                //         if (error) {
+                //             throw error
+                //         }
+                //         else {
+                //             console.log('Email sent: ' + info.response)
+                //         }
+                //     })
+                // }
+                // catch (err) {
+                //     console.log('Error:  ', err)
+                // }
+                let transporter = nodemailer.createTransport({
+                    host: 'smtp.gmail.com',
+                    port: 587,
+                    secure: false,
+                    requireTLS: true,
+                    auth: {
+                        user: 'aadiyaara@gmail.com',
+                        pass: 'hyunghyung'
+                    }
+                });
+                
+                let mailOptions = {
+                    from: 'aadiyaara@gmail.com',
+                    to: 'contact.kulstuff@gmail.com',
+                    subject: 'SOS',
+                    text: 'Send Help!'
+                };
+                
+                transporter.sendMail(mailOptions, (error, info) => {
                     if (error) {
-                        throw error
+                        return console.log(error.message);
                     }
-                    else {
-                        console.log('Email sent: ' + info.response)
-                    }
-                })
-                const newSOS = await newSOS.save()
+                    console.log('success');
+                });
+                const sos = await newSOS.save()
                 await User.findByIdAndUpdate(req.userId, {$push: {SOSs: newSOS.id}}, {new: true})
-                await Contact.findByIdAndUpdate(contactId, {$push: {SOSs: newSOS.id}}, {new: true})
+                await Contact.findByIdAndUpdate(args.contactId, {$push: {SOSs: newSOS.id}}, {new: true})
+                return sos
             }
         },
         revokeSOS: {
@@ -581,6 +617,39 @@ const RootMutation = new GraphQLObjectType({
         }
     }
 })
+
+async function sendMail() {
+    // Generate test SMTP service account from ethereal.email
+    // Only needed if you don't have a real mail account for testing
+    let testAccount = await nodemailer.createTestAccount();
+
+    // create reusable transporter object using the default SMTP transport
+    let transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: testAccount.user, // generated ethereal user
+            pass: testAccount.pass // generated ethereal password
+        }
+    });
+
+    // send mail with defined transport object
+    let info = await transporter.sendMail({
+        from: '"Fred Foo 👻" <foo@example.com>', // sender address
+        to: 'bar@example.com, baz@example.com', // list of receivers
+        subject: 'Hello ✔', // Subject line
+        text: 'Hello world?', // plain text body
+        html: '<b>Hello world?</b>' // html body
+    });
+
+    console.log('Message sent: %s', info.messageId);
+    // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+
+    // Preview only available when sending through an Ethereal account
+    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
+}
 
 module.exports = new GraphQLSchema({
     query: RootQuery,
