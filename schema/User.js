@@ -37,6 +37,12 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Pool'
     },
+    contacts: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Contact'
+        }
+    ],
     address: {
         type: String,
         required: true

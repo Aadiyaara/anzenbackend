@@ -1,11 +1,7 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
-const sosSchema = new Schema({
-    kind: {
-        type: String,
-        required: true
-    },
+const contactSchema = new Schema({
     name: {
         type: String,
         required: true
@@ -15,23 +11,36 @@ const sosSchema = new Schema({
         ref: 'User',
         required: true
     },
-    message: {
+    validFor: {
         type: String,
         required: true
     },
-    contact: {
-        type: Schema.Types.ObjectId,
-        ref: 'Contact',
+    assistEmail: {
+        type: String,
+        required: true  
+    },
+    assistMobile: {
+        type: String,
+        required: true,
+    },
+    message: {
+        type: String,
         required: true
     },
     dateCreated: {
         type: String,
         required: true
     },
+    SOSs: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'SOS'
+        }
+    ],
     status: {
         type: String,
         required: true
     }
 })
 
-module.exports = mongoose.model('SOS', sosSchema)
+module.exports = mongoose.model('Contact', contactSchema)
