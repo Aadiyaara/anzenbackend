@@ -252,7 +252,7 @@ const RootQuery = new GraphQLObjectType({
                     return { userId: user.id, token: token, tokenExpiration: 8760 }
                 }
                 catch (err) {
-                    console.log('Error loggin in the user: ', err)
+                    console.log('Error logging in the user: ', err)
                     return err
                 }
             }
@@ -515,49 +515,76 @@ const RootMutation = new GraphQLObjectType({
         },
         sendSOS: {
             type: GraphQLNonNull(SOSType),
+            args: {
+                contactId: {type: GraphQLNonNull(GraphQLString)},
+                name: {type: GraphQLNonNull(GraphQLString)},
+                kind: {type: GraphQLNonNull(GraphQLString)},
+                message: {type: GraphQLNonNull(GraphQLString)}
+            },
             async resolve (parent, args, req) {
-                var sos;
-                const currentUser = await User.findById(req.userId)
-                for( var i = 0; i < currentUser.contacts.length; i++) {
-                    const contact = await Contact.findById(currentUser.contacts[i])
-                    const newSOS = new SOS({
-                        name: 'Ms.',
-                        kind: 'Test',
-                        message: 'Help',
-                        user: req.userId,
-                        contact: contact,
-                        dateCreated: new Date().toDateString(),
-                        status: 'Active'
-                    })
-                    
-                    let transporter = nodemailer.createTransport({
-                        host: 'smtp.gmail.com',
-                        port: 587,
-                        secure: false,
-                        requireTLS: true,
-                        auth: {
-                            user: 'aadiyaara@gmail.com',
-                            pass: 'hyunghyung'
-                        }
-                    });
-                    
-                    let mailOptions = {
-                        from: 'aadiyaara@gmail.com',
-                        to: contact.assistEmail,
-                        subject: 'SOS',
-                        text: 'Send Help!'
-                    };
-
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            return console.log(error.message);
-                        }
-                        console.log('success');
-                    });
-                    sos = await newSOS.save()
-                    await User.findByIdAndUpdate(req.userId, {$push: {SOSs: newSOS.id}}, {new: true})
-                    await Contact.findByIdAndUpdate(args.contactId, {$push: {SOSs: newSOS.id}}, {new: true})
-                }
+                const newSOS = new SOS({
+                    name: args.name,
+                    kind: args.kind,
+                    message: args.message,
+                    user: req.userId,
+                    contact: args.contactId,
+                    dateCreated: new Date().toDateString(),
+                    status: 'Active'
+                })
+                const contact = await Contact.findById(args.contactId)
+                // var transporter = nodemailer.createTransport({
+                //     service: 'gmail',
+                //     auth: {
+                //         user: 'aadiyaara@gmail.com',
+                //         pass: 'hyunghyung'
+                //     }
+                // })
+                // var mailOptions = {
+                //     from: 'anzen.kulstuff@gmail.com',
+                //     to: contact.assistEmail,
+                //     subject: 'SOS Alert',
+                //     text: args.message
+                // }
+                // try {
+                //     transporter.sendMail(mailOptions, function(error, info){
+                //         if (error) {
+                //             throw error
+                //         }
+                //         else {
+                //             console.log('Email sent: ' + info.response)
+                //         }
+                //     })
+                // }
+                // catch (err) {
+                //     console.log('Error:  ', err)
+                // }
+                let transporter = nodemailer.createTransport({
+                    host: 'smtp.gmail.com',
+                    port: 587,
+                    secure: false,
+                    requireTLS: true,
+                    auth: {
+                        user: 'aadiyaara@gmail.com',
+                        pass: 'hyunghyung'
+                    }
+                });
+                
+                let mailOptions = {
+                    from: 'aadiyaara@gmail.com',
+                    to: 'contact.kulstuff@gmail.com',
+                    subject: 'SOS',
+                    text: 'Send Help!'
+                };
+                
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        return console.log(error.message);
+                    }
+                    console.log('success');
+                });
+                const sos = await newSOS.save()
+                await User.findByIdAndUpdate(req.userId, {$push: {SOSs: newSOS.id}}, {new: true})
+                await Contact.findByIdAndUpdate(args.contactId, {$push: {SOSs: newSOS.id}}, {new: true})
                 return sos
             }
         },
