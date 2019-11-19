@@ -514,51 +514,33 @@ const RootMutation = new GraphQLObjectType({
             }
         },
         sendSOS: {
-            type: GraphQLNonNull(SOSType),
-            async resolve (parent, args, req) {
-                var sos;
-                const currentUser = await User.findById(req.userId)
-                for( var i = 0; i < currentUser.contacts.length; i++) {
-                    const contact = await Contact.findById(currentUser.contacts[i])
-                    const newSOS = new SOS({
-                        name: 'Ms.',
-                        kind: 'Test',
-                        message: 'Help',
-                        user: req.userId,
-                        contact: contact,
-                        dateCreated: new Date().toDateString(),
-                        status: 'Active'
-                    })
-                    
-                    let transporter = nodemailer.createTransport({
-                        host: 'smtp.gmail.com',
-                        port: 587,
-                        secure: false,
-                        requireTLS: true,
-                        auth: {
-                            user: 'aadiyaara@gmail.com',
-                            pass: 'hyunghyung'
-                        }
-                    });
-                    
-                    let mailOptions = {
-                        from: 'aadiyaara@gmail.com',
-                        to: contact.assistEmail,
-                        subject: 'SOS',
-                        text: 'Send Help!'
-                    };
+            type: GraphQLString,
+            async resolve (parent, args, req) { 
+                let transporter = nodemailer.createTransport({
+                    host: 'smtp.gmail.com',
+                    port: 587,
+                    secure: false,
+                    requireTLS: true,
+                    auth: {
+                        user: 'aadiyaara@gmail.com',
+                        pass: 'hyunghyung'
+                    }
+                });
+                
+                let mailOptions = {
+                    from: 'aadiyaara@gmail.com',
+                    to: 'dhawalagarwal01@gmail.com',
+                    subject: 'SOS',
+                    text: 'Send Help!'
+                };
 
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            return console.log(error.message);
-                        }
-                        console.log('success');
-                    });
-                    sos = await newSOS.save()
-                    await User.findByIdAndUpdate(req.userId, {$push: {SOSs: newSOS.id}}, {new: true})
-                    await Contact.findByIdAndUpdate(args.contactId, {$push: {SOSs: newSOS.id}}, {new: true})
-                }
-                return sos
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        return console.log(error.message);
+                    }
+                    console.log('success');
+                });
+                return 'Done!'
             }
         },
         revokeSOS: {
